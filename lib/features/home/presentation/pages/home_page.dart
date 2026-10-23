@@ -20,7 +20,7 @@ class _HomePageState extends State<HomePage> {
   // Daftar halaman yang akan ditampilkan di Bottom Navigation
   final List<Widget> _pages = [
     const Center(child: Text('Dashboard Beranda')), // Ganti dengan DashboardPage
-    const Center(child: Text('Halaman Jadwal & Maps')), // Ganti dengan SchedulePage
+    const SchedulePage(),
     const Center(child: Text('Halaman Materi & Kamera')), // Ganti dengan MaterialsPage
     const Center(child: Text('Halaman Kesehatan')), // Ganti dengan WellnessPage
   ];
