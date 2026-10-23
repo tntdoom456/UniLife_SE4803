@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 class SchedulePage extends StatefulWidget {
@@ -64,13 +65,20 @@ class _SchedulePageState extends State<SchedulePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
+            tooltip: 'Lihat Peta Lokasi',
             onPressed: () {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(const SnackBar(content: Text('Form Jadwal')));
+              context.push('/map'); // Navigasi ke halaman MapPage
             },
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.add),
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tambah jadwal')));
+        },
+      ),
+
       body: SfCalendar(
         view: CalendarView.workWeek,
         firstDayOfWeek: 1,
