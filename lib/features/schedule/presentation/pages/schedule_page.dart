@@ -58,6 +58,100 @@ class _SchedulePageState extends State<SchedulePage> {
     return jadwal;
   }
 
+  void _AddScheduleForm(BuildContext contex){
+    showModalBottomSheet(
+      context: context, 
+      isScrollControlled: true,
+      backgroundColor: const Color.fromARGB(255, 32, 32, 32),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))
+      ),
+      builder: (contex){
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(contex).viewInsets.bottom,
+            left: 16, right: 16, top: 24
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Tambah Jadwal Baru',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16,),
+              TextField(
+                decoration: InputDecoration(
+                  labelText: 'Nama matkul/kegiatan',
+                  filled: true,
+                  fillColor: const Color.fromARGB(255, 32, 32, 32),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)
+                ),
+              ),
+              const SizedBox(height: 12,),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Waktu Mulai',
+                        hintText: '06:00',
+                        filled: true,
+                        fillColor: const Color.fromARGB(255, 32, 32, 32),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)
+                      ),
+                    )
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Waktu Selesai',
+                        hintText: '06:00',
+                        filled: true,
+                        fillColor: const Color.fromARGB(255, 32, 32, 32),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)
+                      ),
+                    )
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                decoration: InputDecoration(
+                  labelText: 'Lokasi',
+                  filled: true,
+                  fillColor: const Color.fromARGB(255, 32, 32, 32),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                  ),
+                  onPressed: (){
+                    Navigator.pop(contex);
+                    ScaffoldMessenger.of(contex).showSnackBar(
+                      const SnackBar(content: Text('Jadwal Berhasil Ditambahkan'))
+                    );
+                  }, child: const Text('Simpan jadwal', style: TextStyle(color: Colors.white, fontSize: 16))
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      }
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -74,9 +168,7 @@ class _SchedulePageState extends State<SchedulePage> {
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tambah jadwal')));
-        },
+        onPressed: () => _AddScheduleForm(context)
       ),
 
       body: SfCalendar(
