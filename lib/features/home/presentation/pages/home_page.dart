@@ -21,7 +21,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _pages = [
     const Center(child: Text('Dashboard Beranda')), // Ganti dengan DashboardPage
     const SchedulePage(),
-    const Center(child: Text('Halaman Materi & Kamera')), // Ganti dengan MaterialsPage
+    const MaterialsPage(),
     const Center(child: Text('Halaman Kesehatan')), // Ganti dengan WellnessPage
   ];
 
