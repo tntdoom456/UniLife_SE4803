@@ -22,7 +22,7 @@ class _HomePageState extends State<HomePage> {
     const Center(child: Text('Dashboard Beranda')), // Ganti dengan DashboardPage
     const SchedulePage(),
     const MaterialsPage(),
-    const Center(child: Text('Halaman Kesehatan')), // Ganti dengan WellnessPage
+    const WellnessPage(), // Ganti dengan WellnessPage
   ];
 
   @override
