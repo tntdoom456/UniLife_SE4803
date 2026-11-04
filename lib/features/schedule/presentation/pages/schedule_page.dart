@@ -1,115 +1,55 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:get/get.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
+import '../../controllers/schedule_controller.dart';
 
-class SchedulePage extends StatefulWidget {
+class SchedulePage extends GetView<ScheduleController> {
   const SchedulePage({super.key});
 
   @override
-  State<SchedulePage> createState() => _SchedulePageState();
-}
-
-class _SchedulePageState extends State<SchedulePage> {
-  List<Appointment> _jadwal = [];
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _muatJadwal();
-  }
-
-  // Membaca jadwal dari penyimpanan lokal.
-  Future<void> _muatJadwal() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final data = prefs.getString('daftar_jadwal');
-
-      if (data != null) {
-        final daftar = jsonDecode(data) as List;
-
-        _jadwal = daftar.map((item) {
-          return Appointment(
-            startTime: DateTime.parse(item['mulai']),
-            endTime: DateTime.parse(item['selesai']),
-            subject: item['nama'],
-            location: item['lokasi'],
-            color: Colors.blueAccent,
-          );
-        }).toList();
-      } else {
-        final hariIni = DateTime.now();
-        final mulai = DateTime(hariIni.year, hariIni.month, hariIni.day, 8, 0);
-
-        _jadwal = [
-          Appointment(
-            startTime: mulai,
-            endTime: mulai.add(const Duration(hours: 2)),
-            subject: 'Pemrograman Perangkat Bergerak',
-            location: 'Gedung TULT 06.01',
-            color: Colors.deepPurple,
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Jadwal Kegiatan'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.map_outlined),
+            // Navigasi diganti menggunakan GetX sesuai dengan rute baru
+            onPressed: () => Get.toNamed('/map'),
           ),
-          Appointment(
-            startTime: mulai.add(const Duration(hours: 3)),
-            endTime: mulai.add(const Duration(hours: 4)),
-            subject: 'Rapat Himpunan',
-            location: 'Sekre Himpunan',
-            color: Colors.blueAccent,
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _tampilkanFormJadwal(context),
+        child: const Icon(Icons.add),
+      ),
+      // Obx akan otomatis me-render ulang SfCalendar ketika nilai jadwal atau isLoading berubah
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return SfCalendar(
+          view: CalendarView.workWeek,
+          firstDayOfWeek: 1,
+          timeSlotViewSettings: const TimeSlotViewSettings(
+            startHour: 7,
+            endHour: 22,
+            timeFormat: 'HH:mm',
+            timeTextStyle: TextStyle(color: Colors.white),
           ),
-        ];
-
-        await _simpanJadwal();
-      }
-    } catch (e) {
-      debugPrint('Gagal memuat jadwal: $e');
-    }
-
-    if (mounted) {
-      setState(() => _loading = false);
-    }
+          dataSource: _ScheduleDataSource(controller.jadwal.toList()),
+          onTap: (details) {
+            if (details.appointments?.isNotEmpty == true) {
+              _detailJadwal(context, details.appointments!.first as Appointment);
+            }
+          },
+        );
+      }),
+    );
   }
 
-  // Menyimpan jadwal ke SharedPreferences.
-  Future<void> _simpanJadwal() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final data = _jadwal.map((j) {
-      return {
-        'nama': j.subject,
-        'lokasi': j.location ?? '',
-        'mulai': j.startTime.toIso8601String(),
-        'selesai': j.endTime.toIso8601String(),
-      };
-    }).toList();
-
-    await prefs.setString('daftar_jadwal', jsonEncode(data));
-  }
-
-  // Memeriksa bentrok jadwal pada tanggal yang sama.
-  bool _jadwalBentrok(
-    DateTime mulai,
-    DateTime selesai, {
-    Appointment? kecuali,
-  }) {
-    return _jadwal.any((j) {
-      if (identical(j, kecuali)) return false;
-
-      final tanggalSama =
-          j.startTime.year == mulai.year &&
-          j.startTime.month == mulai.month &&
-          j.startTime.day == mulai.day;
-
-      return tanggalSama &&
-          mulai.isBefore(j.endTime) &&
-          selesai.isAfter(j.startTime);
-    });
-  }
-
-  // Form tambah dan edit jadwal.
-  Future<void> _formJadwal({Appointment? lama}) async {
+  // Fungsi untuk menampilkan form tambah atau edit jadwal
+  Future<void> _tampilkanFormJadwal(BuildContext context, {Appointment? lama}) async {
     final nama = TextEditingController(text: lama?.subject ?? '');
     final lokasi = TextEditingController(text: lama?.location ?? '');
 
@@ -249,9 +189,8 @@ class _SchedulePageState extends State<SchedulePage> {
                             if (nama.text.trim().isEmpty) {
                               error = 'Nama kegiatan wajib diisi!';
                             } else if (!akhir.isAfter(awal)) {
-                              error =
-                                  'Waktu selesai harus setelah waktu mulai!';
-                            } else if (_jadwalBentrok(
+                              error = 'Waktu selesai harus setelah waktu mulai!';
+                            } else if (controller.jadwalBentrok(
                               awal,
                               akhir,
                               kecuali: lama,
@@ -263,9 +202,7 @@ class _SchedulePageState extends State<SchedulePage> {
                               await showDialog(
                                 context: sheetContext,
                                 builder: (dialogContext) => AlertDialog(
-                                  title: const Text(
-                                    'Tidak dapat menyimpan jadwal',
-                                  ),
+                                  title: const Text('Tidak dapat menyimpan jadwal'),
                                   content: Text(error!),
                                   actions: [
                                     TextButton(
@@ -294,7 +231,7 @@ class _SchedulePageState extends State<SchedulePage> {
         },
       );
 
-      if (hasil == true && mounted) {
+      if (hasil == true) {
         final awal = DateTime(
           tanggal.year,
           tanggal.month,
@@ -319,57 +256,13 @@ class _SchedulePageState extends State<SchedulePage> {
           color: lama?.color ?? Colors.blueAccent,
         );
 
-        final daftarBaru = List<Appointment>.from(_jadwal);
-
-        if (lama != null) {
-          final index = daftarBaru.indexOf(lama);
-
-          if (index != -1) {
-            daftarBaru[index] = baru;
-          }
-        } else {
-          daftarBaru.add(baru);
-        }
-
-        try {
-          final prefs = await SharedPreferences.getInstance();
-
-          final data = daftarBaru.map((j) {
-            return {
-              'nama': j.subject,
-              'lokasi': j.location ?? '',
-              'mulai': j.startTime.toIso8601String(),
-              'selesai': j.endTime.toIso8601String(),
-            };
-          }).toList();
-
-          await prefs.setString('daftar_jadwal', jsonEncode(data));
-
-          if (!mounted) return;
-
-          setState(() {
-            _jadwal = daftarBaru;
-          });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                lama == null
-                    ? 'Jadwal berhasil ditambahkan'
-                    : 'Jadwal berhasil diperbarui',
-              ),
-            ),
-          );
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Gagal menyimpan jadwal: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
+        // Memanggil logika penyimpanan di dalam controller
+        await controller.tambahAtauEditJadwal(baru, lama: lama);
+        
+        Get.snackbar(
+          'Sukses', 
+          lama == null ? 'Jadwal berhasil ditambahkan' : 'Jadwal berhasil diperbarui'
+        );
       }
     } finally {
       nama.dispose();
@@ -377,64 +270,8 @@ class _SchedulePageState extends State<SchedulePage> {
     }
   }
 
-  // Menghapus jadwal.
-  Future<void> _hapusJadwal(Appointment jadwal) async {
-    final yakin = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Jadwal?'),
-        content: Text('Hapus "${jadwal.subject}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
-    );
-
-    if (yakin == true && mounted) {
-      final daftarBaru = List<Appointment>.from(_jadwal)..remove(jadwal);
-
-      try {
-        final prefs = await SharedPreferences.getInstance();
-
-        final data = daftarBaru.map((j) {
-          return {
-            'nama': j.subject,
-            'lokasi': j.location ?? '',
-            'mulai': j.startTime.toIso8601String(),
-            'selesai': j.endTime.toIso8601String(),
-          };
-        }).toList();
-
-        await prefs.setString('daftar_jadwal', jsonEncode(data));
-
-        if (!mounted) return;
-
-        setState(() => _jadwal = daftarBaru);
-
-        Navigator.pop(context);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Jadwal berhasil dihapus')),
-        );
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Gagal menghapus jadwal: $e')));
-        }
-      }
-    }
-  }
-
-  // Menampilkan detail jadwal.
-  void _detailJadwal(Appointment jadwal) {
+  // Fungsi untuk menampilkan detail jadwal yang di-tap
+  void _detailJadwal(BuildContext context, Appointment jadwal) {
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => Padding(
@@ -464,7 +301,7 @@ class _SchedulePageState extends State<SchedulePage> {
                   child: OutlinedButton(
                     onPressed: () {
                       Navigator.pop(sheetContext);
-                      _formJadwal(lama: jadwal);
+                      _tampilkanFormJadwal(context, lama: jadwal);
                     },
                     child: const Text('Edit'),
                   ),
@@ -472,7 +309,9 @@ class _SchedulePageState extends State<SchedulePage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => _hapusJadwal(jadwal),
+                    onPressed: () {
+                      _konfirmasiHapusJadwal(context, jadwal);
+                    },
                     child: const Text('Hapus'),
                   ),
                 ),
@@ -484,49 +323,40 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
-  String _format(DateTime waktu) =>
-      '${waktu.hour.toString().padLeft(2, '0')}:'
-      '${waktu.minute.toString().padLeft(2, '0')}';
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Jadwal Kegiatan'),
+  Future<void> _konfirmasiHapusJadwal(BuildContext context, Appointment jadwal) async {
+    final yakin = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Jadwal?'),
+        content: Text('Hapus "${jadwal.subject}"?'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.map_outlined),
-            onPressed: () => context.push('/map'),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus'),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _formJadwal(),
-        child: const Icon(Icons.add),
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : SfCalendar(
-              view: CalendarView.workWeek,
-              firstDayOfWeek: 1,
-              timeSlotViewSettings: const TimeSlotViewSettings(
-                startHour: 7,
-                endHour: 22,
-                timeFormat: 'HH:mm',
-              ),
-              dataSource: _ScheduleDataSource(_jadwal),
-              onTap: (details) {
-                if (details.appointments?.isNotEmpty == true) {
-                  _detailJadwal(details.appointments!.first as Appointment);
-                }
-              },
-            ),
     );
+
+    if (yakin == true) {
+      // Memanggil fungsi hapus dari controller, state management GetX akan merender ulang kalender otomatis
+      controller.hapusJadwal(jadwal);
+      Navigator.pop(context); // Tutup bottom sheet
+      Get.snackbar('Berhasil', 'Jadwal berhasil dihapus');
+    }
   }
+
+  String _format(DateTime waktu) =>
+      '${waktu.hour.toString().padLeft(2, '0')}:'
+      '${waktu.minute.toString().padLeft(2, '0')}';
 }
 
 class _ScheduleDataSource extends CalendarDataSource {
-  _ScheduleDataSource(List<Appointment> jadwal) {
-    appointments = jadwal;
+  _ScheduleDataSource(List<Appointment> data) {
+    appointments = data;
   }
 }

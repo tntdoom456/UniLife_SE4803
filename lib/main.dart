@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:unilife/core/route/app_pages.dart';
 import 'core/route/app_routes.dart';
 import 'core/theme/app_theme.dart';
 
 void main() {
-  // Inisialisasi Firebase nanti dilakukan di sini
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const UniLifeApp());
 }
@@ -13,10 +14,11 @@ class UniLifeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
+    return GetMaterialApp(
       title: 'UniLife',
       theme: AppTheme.darkTheme,
-      routerConfig: AppRoutes.router,
+      initialRoute: AppPages.INITIAL,
+      getPages: AppPages.routes,
       debugShowCheckedModeBanner: false,
     );
   }
