@@ -11,6 +11,9 @@ class MaterialsPage extends GetView<MaterialsController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('List Materi'),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.blueAccent,
         onPressed: () async {
@@ -54,8 +57,7 @@ class MaterialsPage extends GetView<MaterialsController> {
                     return Card(
                       color: const Color(0xFF2A2A2A),
                       child: InkWell(
-                        onTap: () {
-                          // Contoh tombol Hapus
+                        onLongPress: () {
                           controller.deletePhoto(photo);
                           Get.snackbar('Terhapus', 'File telah dihapus');
                         },

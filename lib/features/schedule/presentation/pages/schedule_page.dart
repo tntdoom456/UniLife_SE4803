@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
+
 import '../../controllers/schedule_controller.dart';
 
 class SchedulePage extends GetView<ScheduleController> {
@@ -40,7 +41,10 @@ class SchedulePage extends GetView<ScheduleController> {
           dataSource: _ScheduleDataSource(controller.jadwal.toList()),
           onTap: (details) {
             if (details.appointments?.isNotEmpty == true) {
-              _detailJadwal(context, details.appointments!.first as Appointment);
+              _detailJadwal(
+                context,
+                details.appointments!.first as Appointment,
+              );
             }
           },
         );
@@ -49,7 +53,10 @@ class SchedulePage extends GetView<ScheduleController> {
   }
 
   // Fungsi untuk menampilkan form tambah atau edit jadwal
-  Future<void> _tampilkanFormJadwal(BuildContext context, {Appointment? lama}) async {
+  Future<void> _tampilkanFormJadwal(
+    BuildContext context, {
+    Appointment? lama,
+  }) async {
     final nama = TextEditingController(text: lama?.subject ?? '');
     final lokasi = TextEditingController(text: lama?.location ?? '');
 
@@ -189,7 +196,8 @@ class SchedulePage extends GetView<ScheduleController> {
                             if (nama.text.trim().isEmpty) {
                               error = 'Nama kegiatan wajib diisi!';
                             } else if (!akhir.isAfter(awal)) {
-                              error = 'Waktu selesai harus setelah waktu mulai!';
+                              error =
+                                  'Waktu selesai harus setelah waktu mulai!';
                             } else if (controller.jadwalBentrok(
                               awal,
                               akhir,
@@ -202,7 +210,9 @@ class SchedulePage extends GetView<ScheduleController> {
                               await showDialog(
                                 context: sheetContext,
                                 builder: (dialogContext) => AlertDialog(
-                                  title: const Text('Tidak dapat menyimpan jadwal'),
+                                  title: const Text(
+                                    'Tidak dapat menyimpan jadwal',
+                                  ),
                                   content: Text(error!),
                                   actions: [
                                     TextButton(
@@ -257,12 +267,17 @@ class SchedulePage extends GetView<ScheduleController> {
         );
 
         // Memanggil logika penyimpanan di dalam controller
-        await controller.tambahAtauEditJadwal(baru, lama: lama);
-        
-        Get.snackbar(
-          'Sukses', 
-          lama == null ? 'Jadwal berhasil ditambahkan' : 'Jadwal berhasil diperbarui'
-        );
+        Future.delayed(const Duration(milliseconds: 300), () async {
+          await controller.tambahAtauEditJadwal(baru, lama: lama);
+
+          Get.snackbar(
+            'Sukses',
+            lama == null
+                ? 'Jadwal berhasil ditambahkan'
+                : 'Jadwal berhasil diperbarui',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        });
       }
     } finally {
       nama.dispose();
@@ -323,7 +338,10 @@ class SchedulePage extends GetView<ScheduleController> {
     );
   }
 
-  Future<void> _konfirmasiHapusJadwal(BuildContext context, Appointment jadwal) async {
+  Future<void> _konfirmasiHapusJadwal(
+    BuildContext context,
+    Appointment jadwal,
+  ) async {
     final yakin = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
