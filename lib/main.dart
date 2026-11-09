@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:unilife/core/route/app_pages.dart';
-import 'core/route/app_routes.dart';
 import 'core/theme/app_theme.dart';
+import 'core/bindings/main_binding.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +19,7 @@ class UniLifeApp extends StatelessWidget {
       theme: AppTheme.darkTheme,
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
+      initialBinding: MainBinding(),
       debugShowCheckedModeBanner: false,
     );
   }

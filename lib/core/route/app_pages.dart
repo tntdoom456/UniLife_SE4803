@@ -14,9 +14,8 @@ import '../../features/wellness/bindings/wellness_binding.dart';
 import '../../features/wellness/presentation/pages/wellness_page.dart';
 
 class AppPages {
-  // Ubah ke Routes.LOGIN nanti jika fitur auth sudah mau dipakai di awal
-  static const INITIAL = Routes.HOME; 
-
+  static const INITIAL = Routes.LOGIN; 
+  
   static final routes = [
     GetPage(
       name: Routes.HOME,
