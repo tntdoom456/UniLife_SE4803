@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:unilife/features/home/controllers/home_controller.dart';
+import 'package:unilife/features/home/presentation/controllers/home_controller.dart';
 
 class MainBottomNav extends GetView<HomeController> {
 const MainBottomNav({super.key});

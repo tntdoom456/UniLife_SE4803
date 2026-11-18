@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:unilife/features/auth/controllers/auth_controller.dart';
+import 'package:unilife/features/auth/presentation/controllers/auth_controller.dart';
 
 class LoginPage extends GetView<AuthController> {
   const LoginPage({super.key});

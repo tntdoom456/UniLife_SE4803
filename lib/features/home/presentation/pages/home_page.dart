@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:unilife/features/home/controllers/home_controller.dart';
+import 'package:unilife/features/home/presentation/controllers/home_controller.dart';
 import 'package:unilife/features/home/presentation/widgets/main_bottom_nav.dart';
-import 'package:unilife/features/schedule/controllers/schedule_controller.dart';
-import 'package:unilife/features/materials/controllers/materials_controller.dart';
-import 'package:unilife/features/wellness/controllers/wellness_controller.dart';
+import 'package:unilife/features/materials/presentation/controllers/materials_controller.dart';
+import 'package:unilife/features/schedule/presentation/controllers/schedule_controller.dart';
+import 'package:unilife/features/wellness/presentation/controllers/wellness_controller.dart';
 import 'package:unilife/features/schedule/presentation/pages/schedule_page.dart';
 import 'package:unilife/features/materials/presentation/pages/materials_page.dart';
 import 'package:unilife/features/wellness/presentation/pages/wellness_page.dart';
