@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
-import '../../controllers/schedule_controller.dart';
+import '../controllers/schedule_controller.dart';
 
 class SchedulePage extends GetView<ScheduleController> {
   const SchedulePage({super.key});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:unilife/features/wellness/controllers/wellness_controller.dart';
+import 'package:unilife/features/wellness/presentation/controllers/wellness_controller.dart';
 
 class WellnessPage extends GetView<WellnessController> {
   //widget untuk box emoji
