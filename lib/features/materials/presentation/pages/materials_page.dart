@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as path;
 
 import '../controllers/materials_controller.dart';
@@ -38,7 +39,7 @@ class MaterialsPage extends GetView<MaterialsController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // HEADER FOLDER
+              // HEADER FOLDER & TOMBOL + UPLOAD MATERI
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -47,20 +48,28 @@ class MaterialsPage extends GetView<MaterialsController> {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   TextButton.icon(
-                    onPressed: () => _tampilkanDialogBuatFolder(context),
+                    onPressed: () async {
+                      final files = await controller.pickAndUploadFiles();
+                      if (files.isNotEmpty) {
+                        Get.snackbar(
+                          'Sukses',
+                          '${files.length} file materi berhasil diunggah.',
+                        );
+                      }
+                    },
                     icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Folder Baru'),
+                    label: const Text('Upload Materi'),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
 
-              // GRID FOLDER
+              // GRID FOLDER MATA KULIAH
               if (controller.savedFolders.isEmpty)
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Text('Belum ada folder. Buat folder mata kuliah baru.'),
+                    child: Text('Belum ada folder. Ketuk ikon folder di atas untuk membuat.'),
                   ),
                 )
               else
@@ -76,45 +85,16 @@ class MaterialsPage extends GetView<MaterialsController> {
                   itemCount: controller.savedFolders.length,
                   itemBuilder: (context, index) {
                     final folderName = controller.savedFolders[index];
-                    final count = controller.getPhotoCountInFolder(folderName);
+                    final count = controller.getFileCountInFolder(folderName);
                     return _buildFolderCard(context, folderName, count);
                   },
                 ),
 
-              const SizedBox(height: 28),
-
-              // BAGIAN FOTO YANG BELUM MASUK FOLDER
-              const Text(
-                'Materi Belum Masuk Folder',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Ketuk ikon folder pada foto untuk memindahkannya ke mata kuliah terkait.',
-                style: TextStyle(fontSize: 12, color: Colors.white54),
-              ),
-              const SizedBox(height: 12),
-
-              if (controller.unorganizedPhotos.isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2A2A2A),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Column(
-                    children: [
-                      Icon(Icons.check_circle_outline, color: Colors.green, size: 32),
-                      SizedBox(height: 8),
-                      Text(
-                        'Semua materi sudah rapi di dalam folder.',
-                        style: TextStyle(color: Colors.white60),
-                      ),
-                    ],
-                  ),
-                )
-              else
+              // PEMISAH TANPA TEKS JUDUL UNTUK FILE YANG BELUM MASUK FOLDER
+              if (controller.unorganizedFiles.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                const Divider(color: Colors.white24, thickness: 1),
+                const SizedBox(height: 12),
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -122,14 +102,21 @@ class MaterialsPage extends GetView<MaterialsController> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 14,
                     mainAxisSpacing: 14,
-                    childAspectRatio: 0.8,
+                    childAspectRatio: 0.78,
                   ),
-                  itemCount: controller.unorganizedPhotos.length,
+                  itemCount: controller.unorganizedFiles.length,
                   itemBuilder: (context, index) {
-                    final photo = controller.unorganizedPhotos[index];
-                    return _buildPhotoCard(context, photo);
+                    final file = controller.unorganizedFiles[index];
+                    return _buildFileCard(
+                      context,
+                      file,
+                      onMove: () => _tampilkanDialogPindahFolder(context, file),
+                      onRename: () => _tampilkanDialogRenameFile(context, file),
+                      onDelete: () => controller.deleteFile(file),
+                    );
                   },
                 ),
+              ],
 
               const SizedBox(height: 80), // Ruang untuk FAB
             ],
@@ -147,7 +134,7 @@ class MaterialsPage extends GetView<MaterialsController> {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
-          controller.loadPhotosInFolder(folderName);
+          controller.loadFilesInFolder(folderName);
           Get.to(() => FolderDetailPage(folderName: folderName));
         },
         onLongPress: () => _konfirmasiHapusFolder(context, folderName),
@@ -181,8 +168,18 @@ class MaterialsPage extends GetView<MaterialsController> {
     );
   }
 
-  Widget _buildPhotoCard(BuildContext context, File photo) {
-    final fileName = path.basename(photo.path);
+  // Kartu untuk merender semua jenis file (Foto, PDF, Word, Excel, Video, Audio, dll.)
+  static Widget _buildFileCard(
+    BuildContext context,
+    File file, {
+    VoidCallback? onMove,
+    required VoidCallback onRename,
+    required VoidCallback onDelete,
+  }) {
+    final controller = Get.find<MaterialsController>();
+    final fileName = path.basename(file.path);
+    final isImage = controller.isImageFile(file.path);
+
     return Card(
       color: const Color(0xFF2A2A2A),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -191,34 +188,61 @@ class MaterialsPage extends GetView<MaterialsController> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: GestureDetector(
-              onTap: () => Get.to(() => PhotoPreviewPage(photoFile: photo)),
-              child: Image.file(photo, fit: BoxFit.cover),
+            child: InkWell(
+              onTap: () => _bukaFile(file, isImage),
+              child: isImage
+                  ? Image.file(file, fit: BoxFit.cover)
+                  : _buildNonImagePreview(file.path),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(10, 6, 4, 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    fileName,
-                    style: const TextStyle(fontSize: 11, color: Colors.white70),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                Text(
+                  fileName,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.drive_file_move_outline, size: 20, color: Colors.blueAccent),
-                  tooltip: 'Pindahkan ke Folder',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () => _tampilkanDialogPindahFolder(context, photo),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
-                  tooltip: 'Hapus',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () => controller.deletePhoto(photo),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.amber),
+                      tooltip: 'Ubah Nama',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                      onPressed: onRename,
+                    ),
+                    if (onMove != null)
+                      IconButton(
+                        icon: const Icon(
+                          Icons.drive_file_move_outline,
+                          size: 18,
+                          color: Colors.blueAccent,
+                        ),
+                        tooltip: 'Pindahkan ke Folder',
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                        onPressed: onMove,
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                      tooltip: 'Hapus',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                      onPressed: onDelete,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -228,7 +252,74 @@ class MaterialsPage extends GetView<MaterialsController> {
     );
   }
 
-  // Ambil foto dari halaman utama dan tanyakan ingin disimpan ke folder mana
+  static Widget _buildNonImagePreview(String filePath) {
+    final ext = path.extension(filePath).toLowerCase();
+    IconData icon;
+    Color color;
+    String label = ext.replaceFirst('.', '').toUpperCase();
+
+    if (ext == '.pdf') {
+      icon = Icons.picture_as_pdf_rounded;
+      color = Colors.redAccent;
+    } else if (['.doc', '.docx'].contains(ext)) {
+      icon = Icons.description_rounded;
+      color = Colors.blueAccent;
+    } else if (['.xls', '.xlsx', '.csv'].contains(ext)) {
+      icon = Icons.table_chart_rounded;
+      color = Colors.green;
+    } else if (['.ppt', '.pptx'].contains(ext)) {
+      icon = Icons.slideshow_rounded;
+      color = Colors.orangeAccent;
+    } else if (['.mp4', '.mov', '.avi', '.mkv'].contains(ext)) {
+      icon = Icons.play_circle_fill_rounded;
+      color = Colors.purpleAccent;
+    } else if (['.mp3', '.wav', '.m4a', '.aac'].contains(ext)) {
+      icon = Icons.audiotrack_rounded;
+      color = Colors.tealAccent;
+    } else {
+      icon = Icons.insert_drive_file_rounded;
+      color = Colors.grey;
+      if (label.isEmpty) label = 'FILE';
+    }
+
+    return Container(
+      color: const Color(0xFF1E1E1E),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 48, color: color),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Future<void> _bukaFile(File file, bool isImage) async {
+    if (isImage) {
+      Get.to(() => PhotoPreviewPage(photoFile: file));
+    } else {
+      final result = await OpenFilex.open(file.path);
+      if (result.type != ResultType.done) {
+        Get.snackbar('Info', 'Tidak dapat membuka file: ${result.message}');
+      }
+    }
+  }
+
   Future<void> _ambilFotoMateri(BuildContext context) async {
     final savedPath = await Get.to<String>(() => const CameraPage());
     if (savedPath != null) {
@@ -271,7 +362,46 @@ class MaterialsPage extends GetView<MaterialsController> {
     );
   }
 
-  void _tampilkanDialogPindahFolder(BuildContext context, File photoFile) {
+  static void _tampilkanDialogRenameFile(
+    BuildContext context,
+    File file, {
+    String? currentFolder,
+  }) {
+    final controller = Get.find<MaterialsController>();
+    final currentBaseName = path.basenameWithoutExtension(file.path);
+    final ext = path.extension(file.path);
+    final nameController = TextEditingController(text: currentBaseName);
+
+    Get.defaultDialog(
+      title: 'Ubah Nama File',
+      content: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: TextField(
+          controller: nameController,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: 'Nama File',
+            suffixText: ext,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+      ),
+      textConfirm: 'Simpan',
+      textCancel: 'Batal',
+      confirmTextColor: Colors.white,
+      onConfirm: () {
+        final newName = nameController.text.trim();
+        if (newName.isNotEmpty) {
+          controller.renameFile(file, newName, currentFolder: currentFolder);
+          Get.back();
+        } else {
+          Get.snackbar('Error', 'Nama file tidak boleh kosong');
+        }
+      },
+    );
+  }
+
+  void _tampilkanDialogPindahFolder(BuildContext context, File file) {
     showModalBottomSheet(
       context: context,
       builder: (ctx) => Padding(
@@ -291,8 +421,8 @@ class MaterialsPage extends GetView<MaterialsController> {
                 title: Text(folder),
                 onTap: () {
                   Navigator.pop(ctx);
-                  controller.movePhotoToFolder(photoFile, folder);
-                  Get.snackbar('Berhasil', 'Materi dipindahkan ke folder $folder');
+                  controller.moveFileToFolder(file, folder);
+                  Get.snackbar('Berhasil', 'File dipindahkan ke folder $folder');
                 },
               );
             }),
@@ -305,7 +435,7 @@ class MaterialsPage extends GetView<MaterialsController> {
   void _konfirmasiHapusFolder(BuildContext context, String folderName) {
     Get.defaultDialog(
       title: 'Hapus Folder?',
-      middleText: 'Seluruh foto di dalam folder "$folderName" juga akan terhapus.',
+      middleText: 'Seluruh file di dalam folder "$folderName" juga akan terhapus.',
       textConfirm: 'Hapus',
       textCancel: 'Batal',
       confirmTextColor: Colors.white,
@@ -318,6 +448,9 @@ class MaterialsPage extends GetView<MaterialsController> {
   }
 }
 
+// ============================================================================
+// HALAMAN DETAIL ISI FOLDER
+// ============================================================================
 class FolderDetailPage extends GetView<MaterialsController> {
   final String folderName;
 
@@ -328,24 +461,43 @@ class FolderDetailPage extends GetView<MaterialsController> {
     return Scaffold(
       appBar: AppBar(
         title: Text(folderName),
+        actions: [
+          TextButton.icon(
+            onPressed: () async {
+              final files = await controller.pickAndUploadFiles(
+                targetFolder: folderName,
+              );
+              if (files.isNotEmpty) {
+                Get.snackbar(
+                  'Sukses',
+                  '${files.length} file ditambahkan ke $folderName',
+                );
+              }
+            },
+            icon: const Icon(Icons.add, color: Colors.blueAccent, size: 18),
+            label: const Text(
+              'Upload Materi',
+              style: TextStyle(color: Colors.blueAccent),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.blueAccent,
         onPressed: () async {
-          // Ambil foto dan langsung masukkan ke dalam folder ini
           final savedPath = await Get.to<String>(() => const CameraPage());
           if (savedPath != null) {
-            await controller.movePhotoToFolder(File(savedPath), folderName);
-            Get.snackbar('Sukses', 'Materi ditambahkan ke folder $folderName');
+            await controller.moveFileToFolder(File(savedPath), folderName);
+            Get.snackbar('Sukses', 'Foto ditambahkan ke folder $folderName');
           }
         },
-        icon: const Icon(Icons.add_a_photo, color: Colors.white),
-        label: const Text('Tambah Materi', style: TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.camera_alt, color: Colors.white),
+        label: const Text('Scan Materi', style: TextStyle(color: Colors.white)),
       ),
       body: Obx(() {
-        final photos = controller.currentFolderPhotos;
+        final files = controller.currentFolderFiles;
 
-        if (photos.isEmpty) {
+        if (files.isEmpty) {
           return const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -353,7 +505,7 @@ class FolderDetailPage extends GetView<MaterialsController> {
                 Icon(Icons.folder_open, size: 64, color: Colors.white38),
                 SizedBox(height: 12),
                 Text(
-                  'Folder ini masih kosong.\nTekan tombol "Tambah Materi" untuk memotret catatan.',
+                  'Folder ini masih kosong.\nKetuk "+ Upload Materi" di atas atau "Scan Materi" di bawah.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white60),
                 ),
@@ -368,50 +520,22 @@ class FolderDetailPage extends GetView<MaterialsController> {
             crossAxisCount: 2,
             crossAxisSpacing: 14,
             mainAxisSpacing: 14,
-            childAspectRatio: 0.8,
+            childAspectRatio: 0.78,
           ),
-          itemCount: photos.length,
+          itemCount: files.length,
           itemBuilder: (context, index) {
-            final photo = photos[index];
-            final fileName = path.basename(photo.path);
-
-            return Card(
-              color: const Color(0xFF2A2A2A),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => Get.to(() => PhotoPreviewPage(photoFile: photo)),
-                      child: Image.file(photo, fit: BoxFit.cover),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            fileName,
-                            style: const TextStyle(fontSize: 11, color: Colors.white70),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
-                          visualDensity: VisualDensity.compact,
-                          onPressed: () => controller.deletePhoto(
-                            photo,
-                            currentFolder: folderName,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            final file = files[index];
+            return MaterialsPage._buildFileCard(
+              context,
+              file,
+              onRename: () => MaterialsPage._tampilkanDialogRenameFile(
+                context,
+                file,
+                currentFolder: folderName,
+              ),
+              onDelete: () => controller.deleteFile(
+                file,
+                currentFolder: folderName,
               ),
             );
           },
@@ -421,6 +545,9 @@ class FolderDetailPage extends GetView<MaterialsController> {
   }
 }
 
+// ============================================================================
+// HALAMAN PREVIEW FOTO FULL SCREEN
+// ============================================================================
 class PhotoPreviewPage extends StatelessWidget {
   final File photoFile;
 
