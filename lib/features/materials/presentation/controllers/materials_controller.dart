@@ -5,18 +5,10 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 class MaterialsController extends GetxController {
-  // Daftar nama folder mata kuliah
   var savedFolders = <String>[].obs;
-
-  // Semua file materi (tetap dinamai savedPhotos agar statistik di home_page.dart tidak error)
   var savedPhotos = <File>[].obs;
-
-  // File materi di luar folder (belum dikelompokkan)
   var unorganizedFiles = <File>[].obs;
-
-  // File materi di dalam folder yang sedang dibuka
   var currentFolderFiles = <File>[].obs;
-
   var isLoading = false.obs;
 
   @override
@@ -34,44 +26,58 @@ class MaterialsController extends GetxController {
     return baseDir;
   }
 
+  Future<List<File>> _sortByLastModifiedDesc(List<File> files) async {
+    final entries = <(File, DateTime)>[];
+    for (final f in files) {
+      try {
+        final modified = await f.lastModified();
+        entries.add((f, modified));
+      } catch (_) {
+        entries.add((f, DateTime.fromMillisecondsSinceEpoch(0)));
+      }
+    }
+    entries.sort((a, b) => b.$2.compareTo(a.$2));
+    return entries.map((e) => e.$1).toList();
+  }
+
   Future<void> loadSavedFoldersAndPhotos() async {
     isLoading.value = true;
     try {
       final baseDir = await _getBaseMaterialsDirectory();
-      final entities = baseDir.listSync();
+      var entities = await baseDir.list().toList();
 
-      // Buat folder awal jika direktori masih benar-benar kosong
       if (entities.isEmpty) {
-        for (final defaultFolder in ['Pemrograman Bergerak', 'Basis Data', 'Jaringan Komputer']) {
+        for (final defaultFolder in [
+          'Pemrograman Bergerak',
+          'Basis Data',
+          'Jaringan Komputer',
+        ]) {
           final dir = Directory(path.join(baseDir.path, defaultFolder));
           if (!await dir.exists()) await dir.create();
         }
+        entities = await baseDir.list().toList();
       }
 
-      final updatedEntities = baseDir.listSync();
-
-      // 1. Muat daftar folder
-      final folders = updatedEntities
+      // 1. Daftar folder
+      final folders = entities
           .whereType<Directory>()
           .map((dir) => path.basename(dir.path))
-          .toList();
-      folders.sort();
+          .toList()
+        ..sort();
       savedFolders.value = folders;
 
-      // 2. Muat semua file yang masih berada di luar folder
-      final rootFiles = updatedEntities.whereType<File>().toList();
-      rootFiles.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
-      unorganizedFiles.value = rootFiles;
+      // 2. File di luar folder (asinkron)
+      final rootFiles = entities.whereType<File>().toList();
+      unorganizedFiles.value = await _sortByLastModifiedDesc(rootFiles);
 
-      // 3. Hitung seluruh file (di luar & di dalam folder) untuk Beranda (HomePage)
-      final allFiles = baseDir.listSync(recursive: true).whereType<File>().toList();
-      savedPhotos.value = allFiles;
+      // 3. Seluruh file secara rekursif (asinkron) untuk Beranda
+      final allEntities = await baseDir.list(recursive: true).toList();
+      savedPhotos.value = allEntities.whereType<File>().toList();
     } finally {
       isLoading.value = false;
     }
   }
 
-  // Memuat semua jenis file di dalam folder tertentu
   Future<void> loadFilesInFolder(String folderName) async {
     final baseDir = await _getBaseMaterialsDirectory();
     final folderDir = Directory(path.join(baseDir.path, folderName));
@@ -80,19 +86,18 @@ class MaterialsController extends GetxController {
       return;
     }
 
-    final files = folderDir.listSync().whereType<File>().toList();
-    files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
-    currentFolderFiles.value = files;
+    final entities = await folderDir.list().toList();
+    final files = entities.whereType<File>().toList();
+    currentFolderFiles.value = await _sortByLastModifiedDesc(files);
   }
 
-  // Menghitung jumlah file di dalam suatu folder
   int getFileCountInFolder(String folderName) {
     return savedPhotos.where((file) {
       final parentFolder = path.basename(file.parent.path);
       return parentFolder == folderName;
     }).length;
   }
-  // Upload berbagai jenis file (PDF, Word, Excel, Video, Foto, Audio, dll.)
+
   Future<List<File>> pickAndUploadFiles({String? targetFolder}) async {
     final List<File> uploadedFiles = [];
     try {
@@ -117,11 +122,11 @@ class MaterialsController extends GetxController {
         String fileName = picked.name;
         String destPath = path.join(destinationDir.path, fileName);
 
-        // Jika nama file sudah ada, tambahkan timestamp agar tidak menimpa file lama
         if (await File(destPath).exists()) {
           final ext = path.extension(fileName);
           final nameWithoutExt = path.basenameWithoutExtension(fileName);
-          fileName = '${nameWithoutExt}_${DateTime.now().millisecondsSinceEpoch}$ext';
+          fileName =
+              '${nameWithoutExt}_${DateTime.now().millisecondsSinceEpoch}$ext';
           destPath = path.join(destinationDir.path, fileName);
         }
 
@@ -139,23 +144,29 @@ class MaterialsController extends GetxController {
     return uploadedFiles;
   }
 
-  // Mengubah nama file (otomatis mempertahankan ekstensi asli seperti .pdf, .mp4, .jpg)
-  Future<void> renameFile(File file, String newNameInput, {String? currentFolder}) async {
+  Future<void> renameFile(
+    File file,
+    String newNameInput, {
+    String? currentFolder,
+  }) async {
     try {
       final cleanInput = newNameInput.trim();
       if (cleanInput.isEmpty) return;
 
       final originalExt = path.extension(file.path);
-      final finalFileName = cleanInput.toLowerCase().endsWith(originalExt.toLowerCase())
-          ? cleanInput
-          : '$cleanInput$originalExt';
+      final finalFileName =
+          cleanInput.toLowerCase().endsWith(originalExt.toLowerCase())
+              ? cleanInput
+              : '$cleanInput$originalExt';
 
       final newPath = path.join(file.parent.path, finalFileName);
-
       if (newPath == file.path) return;
 
       if (await File(newPath).exists()) {
-        Get.snackbar('Perhatian', 'File dengan nama "$finalFileName" sudah ada.');
+        Get.snackbar(
+          'Perhatian',
+          'File dengan nama "$finalFileName" sudah ada.',
+        );
         return;
       }
 
@@ -170,7 +181,6 @@ class MaterialsController extends GetxController {
     }
   }
 
-  // Membuat folder baru
   Future<void> createNewFolder(String folderName) async {
     try {
       final baseDir = await _getBaseMaterialsDirectory();
@@ -188,7 +198,6 @@ class MaterialsController extends GetxController {
     }
   }
 
-  // Menghapus folder beserta isinya
   Future<void> deleteFolder(String folderName) async {
     try {
       final baseDir = await _getBaseMaterialsDirectory();
@@ -203,7 +212,6 @@ class MaterialsController extends GetxController {
     }
   }
 
-  // Memindahkan file ke dalam folder tertentu
   Future<void> moveFileToFolder(File file, String targetFolder) async {
     try {
       final baseDir = await _getBaseMaterialsDirectory();
@@ -218,7 +226,8 @@ class MaterialsController extends GetxController {
       if (await File(newPath).exists()) {
         final ext = path.extension(fileName);
         final nameWithoutExt = path.basenameWithoutExtension(fileName);
-        fileName = '${nameWithoutExt}_${DateTime.now().millisecondsSinceEpoch}$ext';
+        fileName =
+            '${nameWithoutExt}_${DateTime.now().millisecondsSinceEpoch}$ext';
         newPath = path.join(folderDir.path, fileName);
       }
 
@@ -232,7 +241,6 @@ class MaterialsController extends GetxController {
     }
   }
 
-  // Menghapus 1 file materi
   Future<void> deleteFile(File file, {String? currentFolder}) async {
     try {
       if (await file.exists()) {

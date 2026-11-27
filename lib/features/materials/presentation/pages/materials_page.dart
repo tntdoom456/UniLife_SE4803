@@ -448,13 +448,129 @@ class MaterialsPage extends GetView<MaterialsController> {
   }
 }
 
-// ============================================================================
-// HALAMAN DETAIL ISI FOLDER
-// ============================================================================
 class FolderDetailPage extends GetView<MaterialsController> {
   final String folderName;
 
   const FolderDetailPage({super.key, required this.folderName});
+
+  Future<void> _tampilkanDialogBuatFolder(BuildContext context) async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => const _MaterialTextInputDialog(
+        title: 'Buat Folder Mata Kuliah',
+        hintText: 'Contoh: Struktur Data',
+        confirmLabel: 'Buat',
+      ),
+    );
+
+    if (name != null && name.isNotEmpty) {
+      await Future.delayed(const Duration(milliseconds: 220));
+      await controller.createNewFolder(name);
+    }
+  }
+
+  static Future<void> _tampilkanDialogRenameFile(
+    BuildContext context,
+    File file, {
+    String? currentFolder,
+  }) async {
+    final controller = Get.find<MaterialsController>();
+    final currentBaseName = path.basenameWithoutExtension(file.path);
+    final ext = path.extension(file.path);
+
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (_) => _MaterialTextInputDialog(
+        title: 'Ubah Nama File',
+        initialValue: currentBaseName,
+        labelText: 'Nama File',
+        suffixText: ext,
+        confirmLabel: 'Simpan',
+      ),
+    );
+
+    if (newName != null && newName.isNotEmpty) {
+      await Future.delayed(const Duration(milliseconds: 220));
+      await controller.renameFile(file, newName, currentFolder: currentFolder);
+    }
+  }
+
+  Future<void> _tampilkanDialogPindahFolder(
+    BuildContext context,
+    File file,
+  ) async {
+    final selectedFolder = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Simpan ke Folder Mata Kuliah',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            ...controller.savedFolders.map((folder) {
+              return ListTile(
+                leading: const Icon(Icons.folder, color: Colors.amber),
+                title: Text(folder),
+                onTap: () => Navigator.pop(ctx, folder),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+
+    if (selectedFolder != null) {
+      await Future.delayed(const Duration(milliseconds: 220));
+      await controller.moveFileToFolder(file, selectedFolder);
+      Get.snackbar('Berhasil', 'File dipindahkan ke folder $selectedFolder');
+    }
+  }
+
+  Future<void> _konfirmasiHapusFolder(
+    BuildContext context,
+    String folderName,
+  ) async {
+    final yakin = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text('Hapus Folder?'),
+        content: Text(
+          'Seluruh file di dalam folder "$folderName" juga akan terhapus.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (yakin == true) {
+      await Future.delayed(const Duration(milliseconds: 220));
+      await controller.deleteFolder(folderName);
+    }
+  }
+
+  
 
   @override
   Widget build(BuildContext context) {
@@ -545,9 +661,7 @@ class FolderDetailPage extends GetView<MaterialsController> {
   }
 }
 
-// ============================================================================
 // HALAMAN PREVIEW FOTO FULL SCREEN
-// ============================================================================
 class PhotoPreviewPage extends StatelessWidget {
   final File photoFile;
 
@@ -568,6 +682,84 @@ class PhotoPreviewPage extends StatelessWidget {
           child: Image.file(photoFile),
         ),
       ),
+    );
+  }
+}
+
+class _MaterialTextInputDialog extends StatefulWidget {
+  final String title;
+  final String initialValue;
+  final String? hintText;
+  final String? labelText;
+  final String? suffixText;
+  final String confirmLabel;
+
+  const _MaterialTextInputDialog({
+    required this.title,
+    this.initialValue = '',
+    this.hintText,
+    this.labelText,
+    this.suffixText,
+    required this.confirmLabel,
+  });
+
+  @override
+  State<_MaterialTextInputDialog> createState() =>
+      _MaterialTextInputDialogState();
+}
+
+class _MaterialTextInputDialogState extends State<_MaterialTextInputDialog> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _tutup([String? value]) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    Navigator.of(context).pop(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF1E1E1E),
+      title: Text(widget.title),
+      content: TextField(
+        controller: _ctrl,
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+          labelText: widget.labelText,
+          suffixText: widget.suffixText,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => _tutup(),
+          child: const Text('Batal'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueAccent,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () {
+            final clean = _ctrl.text.trim();
+            if (clean.isEmpty) return;
+            _tutup(clean);
+          },
+          child: Text(widget.confirmLabel),
+        ),
+      ],
     );
   }
 }

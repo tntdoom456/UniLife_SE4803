@@ -1,6 +1,4 @@
 import 'package:get/get.dart';
-
-// Import semua controller Anda dari path yang baru
 import '../../features/auth/presentation/controllers/auth_controller.dart';
 import '../../features/home/presentation/controllers/home_controller.dart';
 import '../../features/schedule/presentation/controllers/schedule_controller.dart';
