@@ -448,9 +448,6 @@ class MaterialsPage extends GetView<MaterialsController> {
   }
 }
 
-// ============================================================================
-// HALAMAN DETAIL ISI FOLDER
-// ============================================================================
 class FolderDetailPage extends GetView<MaterialsController> {
   final String folderName;
 
