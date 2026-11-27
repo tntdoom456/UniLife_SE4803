@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../data/models/quote_model.dart';
 
 class WellnessController extends GetxController {
@@ -84,7 +86,10 @@ class WellnessController extends GetxController {
     }
 
     // 2. Skor Air Putih (Maks 25 poin)
-    final waterRatio = (waterGlasses.value / targetWaterGlasses).clamp(0.0, 1.0);
+    final waterRatio = (waterGlasses.value / targetWaterGlasses).clamp(
+      0.0,
+      1.0,
+    );
     final int waterScore = (waterRatio * 25).round();
 
     // 3. Skor Jam Tidur (Maks 25 poin, ideal 7-9 jam)
@@ -140,22 +145,29 @@ class WellnessController extends GetxController {
 
   Future<void> fetchDailyQuote() async {
     isLoadingQuote.value = true;
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
     try {
-      final client = HttpClient()..connectionTimeout = const Duration(seconds: 6);
-      final request = await client.getUrl(Uri.parse('https://dummyjson.com/quotes/random'));
-      final response = await request.close();
+      final request = await client
+          .getUrl(Uri.parse('https://dummyjson.com/quotes/random'))
+          .timeout(const Duration(seconds: 6));
+      final response = await request.close().timeout(
+        const Duration(seconds: 6),
+      );
 
       if (response.statusCode == 200) {
-        final body = await response.transform(utf8.decoder).join();
+        final body = await response
+            .transform(utf8.decoder)
+            .join()
+            .timeout(const Duration(seconds: 6));
         final data = jsonDecode(body) as Map<String, dynamic>;
         currentQuote.value = QuoteModel.fromJson(data);
       } else {
         _useFallbackQuote();
       }
-      client.close();
     } catch (_) {
       _useFallbackQuote();
     } finally {
+      client.close(force: true);
       isLoadingQuote.value = false;
     }
   }
@@ -256,14 +268,17 @@ class WellnessController extends GetxController {
     final savedDate = prefs.getString('wellness_last_date');
     final today = _todayKey();
 
-    sleepReminderActive.value = prefs.getBool('wellness_sleep_reminder') ?? true;
+    sleepReminderActive.value =
+        prefs.getBool('wellness_sleep_reminder') ?? true;
 
     // Muat riwayat dari hari-hari sebelumnya
     final historyRaw = prefs.getString('wellness_history');
     if (historyRaw != null) {
       final decoded = jsonDecode(historyRaw) as List;
       historyLogs.value = decoded
-          .map((item) => WellnessLogModel.fromMap(Map<String, dynamic>.from(item)))
+          .map(
+            (item) => WellnessLogModel.fromMap(Map<String, dynamic>.from(item)),
+          )
           .toList();
     }
 

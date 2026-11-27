@@ -18,7 +18,6 @@ class HomePage extends GetView<HomeController> {
       final index = controller.currentIndex.value;
 
       Widget page;
-
       switch (index) {
         case 1:
           page = const SchedulePage();
@@ -40,8 +39,8 @@ class HomePage extends GetView<HomeController> {
                   'UniLife',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                actions: [
-                  const Padding(
+                actions: const [
+                  Padding(
                     padding: EdgeInsets.only(right: 16),
                     child: Icon(Icons.school_outlined),
                   ),
@@ -252,10 +251,10 @@ class DashboardContent extends StatelessWidget {
 
             return Column(
               children: todaySchedules.map((schedule) {
-                return Container(
+                return Card(
+                  color: const Color(0xFF2A2A2A),
                   margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2A2A2A),
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: ListTile(

@@ -12,6 +12,7 @@ class WellnessPage extends GetView<WellnessController> {
     final now = DateTime.now();
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Kesehatan & Kesejahteraan'),
         actions: [
@@ -44,7 +45,10 @@ class WellnessPage extends GetView<WellnessController> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF222222),
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: statusColor.withOpacity(0.5), width: 1.5),
+                  border: Border.all(
+                    color: statusColor.withOpacity(0.5),
+                    width: 1.5,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,7 +65,9 @@ class WellnessPage extends GetView<WellnessController> {
                                 value: score / 100,
                                 strokeWidth: 7,
                                 backgroundColor: Colors.white12,
-                                valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  statusColor,
+                                ),
                               ),
                             ),
                             Text(
@@ -80,7 +86,10 @@ class WellnessPage extends GetView<WellnessController> {
                             children: [
                               const Text(
                                 'Indeks Kesejahteraan Harian',
-                                style: TextStyle(fontSize: 12, color: Colors.white60),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white60,
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -94,7 +103,10 @@ class WellnessPage extends GetView<WellnessController> {
                               const SizedBox(height: 4),
                               Text(
                                 'Beban jadwal hari ini: $todayClasses kegiatan',
-                                style: const TextStyle(fontSize: 12, color: Colors.white70),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white70,
+                                ),
                               ),
                             ],
                           ),
@@ -111,12 +123,19 @@ class WellnessPage extends GetView<WellnessController> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.tips_and_updates_outlined, color: statusColor, size: 20),
+                          Icon(
+                            Icons.tips_and_updates_outlined,
+                            color: statusColor,
+                            size: 20,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               controller.healthRecommendation,
-                              style: const TextStyle(fontSize: 12.5, color: Colors.white70),
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                color: Colors.white70,
+                              ),
                             ),
                           ),
                         ],
@@ -150,7 +169,11 @@ class WellnessPage extends GetView<WellnessController> {
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.format_quote_rounded, color: Colors.white70, size: 24),
+                            Icon(
+                              Icons.format_quote_rounded,
+                              color: Colors.white70,
+                              size: 24,
+                            ),
                             SizedBox(width: 6),
                             Text(
                               'Afirmasi & Motivasi (REST API)',
@@ -172,7 +195,11 @@ class WellnessPage extends GetView<WellnessController> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Icon(Icons.refresh, color: Colors.white, size: 20),
+                              : const Icon(
+                                  Icons.refresh,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                           tooltip: 'Muat Quote Baru dari API',
                           visualDensity: VisualDensity.compact,
                           onPressed: controller.isLoadingQuote.value
@@ -195,7 +222,10 @@ class WellnessPage extends GetView<WellnessController> {
                     const SizedBox(height: 10),
                     Text(
                       '— ${quote.author}',
-                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -248,7 +278,10 @@ class WellnessPage extends GetView<WellnessController> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.water_drop_rounded, color: Colors.lightBlueAccent),
+                        const Icon(
+                          Icons.water_drop_rounded,
+                          color: Colors.lightBlueAccent,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
@@ -256,22 +289,35 @@ class WellnessPage extends GetView<WellnessController> {
                             children: [
                               const Text(
                                 'Asupan Air Putih',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
                               ),
                               Text(
                                 '$glasses / $target Gelas ($ml ml dari 2000 ml)',
-                                style: const TextStyle(fontSize: 12, color: Colors.white60),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white60,
+                                ),
                               ),
                             ],
                           ),
                         ),
                         IconButton(
                           onPressed: controller.removeWater,
-                          icon: const Icon(Icons.remove_circle_outline, color: Colors.white70),
+                          icon: const Icon(
+                            Icons.remove_circle_outline,
+                            color: Colors.white70,
+                          ),
                         ),
                         IconButton(
                           onPressed: controller.addWater,
-                          icon: const Icon(Icons.add_circle_rounded, color: Colors.blueAccent, size: 28),
+                          icon: const Icon(
+                            Icons.add_circle_rounded,
+                            color: Colors.blueAccent,
+                            size: 28,
+                          ),
                         ),
                       ],
                     ),
@@ -282,7 +328,9 @@ class WellnessPage extends GetView<WellnessController> {
                         value: progress,
                         minHeight: 8,
                         backgroundColor: Colors.white12,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.lightBlueAccent),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Colors.lightBlueAccent,
+                        ),
                       ),
                     ),
                   ],
@@ -305,11 +353,17 @@ class WellnessPage extends GetView<WellnessController> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.restaurant_rounded, color: Colors.orangeAccent),
+                        Icon(
+                          Icons.restaurant_rounded,
+                          color: Colors.orangeAccent,
+                        ),
                         SizedBox(width: 10),
                         Text(
                           'Keteraturan Pola Makan',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
                         ),
                       ],
                     ),
@@ -349,63 +403,77 @@ class WellnessPage extends GetView<WellnessController> {
             const SizedBox(height: 12),
 
             // C. Durasi Tidur & Pengingat Istirahat
+            // C. Durasi Tidur & Pengingat Istirahat
             Obx(() {
               final hours = controller.sleepHours.value;
-              return Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2A2A2A),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.bedtime_rounded, color: Colors.deepPurpleAccent),
-                            SizedBox(width: 10),
-                            Text(
-                              'Durasi Tidur Semalam',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              return Material(
+                color: const Color(0xFF2A2A2A),
+                borderRadius: BorderRadius.circular(16),
+                clipBehavior: Clip.antiAlias,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(
+                                Icons.bedtime_rounded,
+                                color: Colors.deepPurpleAccent,
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                'Durasi Tidur Semalam',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '${hours.toStringAsFixed(1)} Jam',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: (hours >= 7 && hours <= 9)
+                                  ? Colors.greenAccent
+                                  : Colors.orangeAccent,
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                      Slider(
+                        value: hours,
+                        min: 2.0,
+                        max: 12.0,
+                        divisions: 20,
+                        activeColor: Colors.deepPurpleAccent,
+                        label: '${hours.toStringAsFixed(1)} Jam',
+                        onChanged: controller.updateSleepHours,
+                      ),
+                      const Divider(color: Colors.white12),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text(
+                          'Pengingat Tidur Sebelum 23:00',
+                          style: TextStyle(fontSize: 14),
                         ),
-                        Text(
-                          '${hours.toStringAsFixed(1)} Jam',
+                        subtitle: const Text(
+                          'Mencegah begadang berlebihan saat ada kelas pagi',
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: (hours >= 7 && hours <= 9)
-                                ? Colors.greenAccent
-                                : Colors.orangeAccent,
+                            fontSize: 11.5,
+                            color: Colors.white54,
                           ),
                         ),
-                      ],
-                    ),
-                    Slider(
-                      value: hours,
-                      min: 2.0,
-                      max: 12.0,
-                      divisions: 20,
-                      activeColor: Colors.deepPurpleAccent,
-                      label: '${hours.toStringAsFixed(1)} Jam',
-                      onChanged: controller.updateSleepHours,
-                    ),
-                    const Divider(color: Colors.white12),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Pengingat Tidur Sebelum 23:00', style: TextStyle(fontSize: 14)),
-                      subtitle: const Text(
-                        'Mencegah begadang berlebihan saat ada kelas pagi',
-                        style: TextStyle(fontSize: 11.5, color: Colors.white54),
+                        value: controller.sleepReminderActive.value,
+                        activeColor: Colors.deepPurpleAccent,
+                        onChanged: controller.toggleSleepReminder,
                       ),
-                      value: controller.sleepReminderActive.value,
-                      activeColor: Colors.deepPurpleAccent,
-                      onChanged: controller.toggleSleepReminder,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             }),
@@ -420,7 +488,9 @@ class WellnessPage extends GetView<WellnessController> {
                   backgroundColor: Colors.blueAccent,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 onPressed: () => _tampilkanDialogCatatJurnal(context),
                 icon: const Icon(Icons.fact_check_outlined),
@@ -447,7 +517,9 @@ class WellnessPage extends GetView<WellnessController> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? color.withOpacity(0.2) : const Color(0xFF2A2A2A),
+            color: isSelected
+                ? color.withOpacity(0.2)
+                : const Color(0xFF2A2A2A),
             border: Border.all(
               color: isSelected ? color : Colors.transparent,
               width: 2,
@@ -484,7 +556,9 @@ class WellnessPage extends GetView<WellnessController> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         decoration: BoxDecoration(
-          color: checked ? Colors.orangeAccent.withOpacity(0.2) : Colors.black26,
+          color: checked
+              ? Colors.orangeAccent.withOpacity(0.2)
+              : Colors.black26,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: checked ? Colors.orangeAccent : Colors.white12,
@@ -516,29 +590,17 @@ class WellnessPage extends GetView<WellnessController> {
     );
   }
 
-  void _tampilkanDialogCatatJurnal(BuildContext context) {
-    final noteCtrl = TextEditingController(text: controller.dailyNote.value);
-    Get.defaultDialog(
-      title: 'Check-In Harian',
-      content: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: TextField(
-          controller: noteCtrl,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Tulis catatan kondisimu hari ini (misal: agak pusing karena tugas)...',
-            border: OutlineInputBorder(),
-          ),
-        ),
-      ),
-      textConfirm: 'Simpan Rekap',
-      textCancel: 'Batal',
-      confirmTextColor: Colors.white,
-      onConfirm: () {
-        controller.saveDailyCheckInLog(noteCtrl.text);
-        Get.back();
-      },
+  Future<void> _tampilkanDialogCatatJurnal(BuildContext context) async {
+    final hasil = await showDialog<String>(
+      context: context,
+      builder: (_) =>
+          _CatatJurnalDialog(initialNote: controller.dailyNote.value),
     );
+
+    if (hasil != null) {
+      await Future.delayed(const Duration(milliseconds: 220));
+      await controller.saveDailyCheckInLog(hasil);
+    }
   }
 
   void _tampilkanRiwayatModal(BuildContext context) {
@@ -576,7 +638,9 @@ class WellnessPage extends GetView<WellnessController> {
                     return Card(
                       color: const Color(0xFF2A2A2A),
                       margin: const EdgeInsets.only(bottom: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundColor: Colors.blueAccent.withOpacity(0.2),
@@ -591,12 +655,18 @@ class WellnessPage extends GetView<WellnessController> {
                         ),
                         title: Text(
                           '${log.date} • Mood: ${log.mood}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                         subtitle: Text(
                           'Air: ${log.waterGlasses} gelas | Tidur: ${log.sleepHours.toStringAsFixed(1)} jam | Makan: ${log.mealsCount}x'
                           '${log.note.isNotEmpty ? "\nCatatan: ${log.note}" : ""}',
-                          style: const TextStyle(fontSize: 12, color: Colors.white70),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
                         ),
                       ),
                     );
@@ -607,6 +677,63 @@ class WellnessPage extends GetView<WellnessController> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CatatJurnalDialog extends StatefulWidget {
+  final String initialNote;
+
+  const _CatatJurnalDialog({required this.initialNote});
+
+  @override
+  State<_CatatJurnalDialog> createState() => _CatatJurnalDialogState();
+}
+
+class _CatatJurnalDialogState extends State<_CatatJurnalDialog> {
+  late final TextEditingController _noteCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteCtrl = TextEditingController(text: widget.initialNote);
+  }
+
+  @override
+  void dispose() {
+    _noteCtrl.dispose();
+    super.dispose();
+  }
+
+  void _tutup([String? value]) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    Navigator.of(context).pop(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF1E1E1E),
+      title: const Text('Check-In Harian'),
+      content: TextField(
+        controller: _noteCtrl,
+        maxLines: 3,
+        decoration: const InputDecoration(
+          hintText: 'Tulis catatan kondisimu hari ini (misal: agak pusing karena tugas)...',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => _tutup(), child: const Text('Batal')),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueAccent,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () => _tutup(_noteCtrl.text),
+          child: const Text('Simpan Rekap'),
+        ),
+      ],
     );
   }
 }
